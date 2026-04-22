@@ -1,0 +1,7 @@
+# Web Framework
+Flask==3.0.2
+
+# Required to allow requests from the client (Cross-Origin Resource Sharing)
+Flask-Cors==4.0.0
+
+# Add any other packages you imported in your server.py here!

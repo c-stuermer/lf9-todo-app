@@ -1,0 +1,267 @@
+openapi: 3.0.1
+info:
+  title: Todo List Management
+  description: API for managing todo lists and their entries.
+  contact:
+    email: c.vonstuermer@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.1.0
+servers:
+  - url: http://127.0.0.1:5000/
+tags:
+  - name: List Management
+    description: Operations for lists and entries
+
+paths:
+
+  /todo-list:
+    get:
+      tags:
+        - List Management
+      summary: Returns all todo lists
+      operationId: getAllLists
+      responses:
+        200:
+          description: List of all lists successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TodoList'
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+    
+    post:
+      tags:
+        - List Management
+      summary: Adds a new todo list
+      operationId: addList
+      requestBody:
+        description: List object (name of the list)
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: List successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoList'
+        400:
+          description: Invalid body
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+
+  /todo-list/{list_id}:
+    parameters:
+      - name: list_id
+        in: path
+        required: true
+        description: ID of the requested list
+        schema:
+          type: string
+          format: uuid
+    
+    get:
+      tags:
+        - List Management
+      summary: Returns all entries of a todo list
+      operationId: getEntriesByList
+      responses:
+        200:
+          description: Entries successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TodoEntry'
+        404:
+          description: Invalid ID (list not found)
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+  
+    delete:
+      tags:
+        - List Management
+      summary: Deletes an entire todo list
+      operationId: deleteList
+      responses:
+        204:
+          description: Successfully deleted (no content)
+        404:
+          description: Invalid ID
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+
+    post:
+      tags:
+        - List Management
+      summary: Adds an entry to an existing todo list
+      operationId: addEntryToList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        201:
+          description: Entry successfully created
+        400:
+          description: Invalid body
+        404:
+          description: Invalid ID
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+
+  /todo-list/entry/{entry_id}:
+    parameters:
+      - name: entry_id
+        in: path
+        required: true
+        description: ID of the requested entry
+        schema:
+          type: string
+          format: uuid
+    
+    patch:
+      tags:
+        - List Management
+      summary: Updates an existing entry
+      operationId: updateEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        200:
+          description: Successfully updated
+        400:
+          description: Invalid body
+        404:
+          description: Invalid ID
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+    
+    delete:
+      tags:
+        - List Management
+      summary: Deletes a single entry from a todo list
+      operationId: deleteEntry
+      responses:
+        204:
+          description: Entry successfully deleted
+        404:
+          description: Invalid ID
+        # Global error responses referenced from components
+        405:
+          $ref: '#/components/responses/MethodNotAllowed'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+        502:
+          $ref: '#/components/responses/BadGateway'
+
+components:
+  schemas:
+    TodoList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    TodoEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        list_id:
+          type: string
+          format: uuid
+  
+  # Centralized definition of global responses
+  responses:
+    MethodNotAllowed:
+      description: Invalid method called on an existing endpoint
+    TooManyRequests:
+      description: Too many requests made
+    InternalServerError:
+      description: An internal server error occurred
+    BadGateway:
+      description: An invalid endpoint was called
