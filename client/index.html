@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Todo Client</title>
+   <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+   <div class="container">
+
+      <!-- Landing View -->
+      <div id="view-landing">
+         <div class="header-nav">
+            <h2>Todo-Listen</h2>
+         </div>
+         <div id="listsContainer"></div>
+         <div class="input-group-row">
+            <button class="btn-square btn-add main-action" onclick="createList()">+</button>
+            <input type="text" id="newListName" class="main-action" placeholder="Neue Liste Name...">
+         </div>
+      </div>
+      
+      <!-- List View -->
+      <div id="view-list" class="hidden">
+         <div class="header-nav">
+            <span class="btn-square btn-back main-action" onclick="showLanding()" title="Zurück">‹</span>
+            <div class="title-container">
+               <h2 id="currentListName">Liste</h2>
+            </div>
+         </div>
+         <div id="entriesContainer"></div>
+         <div class="input-group-row">
+            <button class="btn-square btn-add main-action" id="addEntryBtn" onclick="createEntry()">+</button>
+            <input type="text" id="newEntryName" class="main-action" placeholder="Aufgabe...">
+            <input type="text" id="newEntryDesc" class="main-action" placeholder="Beschreibung...">
+         </div>
+      </div>
+   </div>
+
+   <script src="config.js"></script>
+   <script src="app.js" defer></script>
+</body>
+</html>
