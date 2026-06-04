@@ -85,8 +85,8 @@ sudo usermod -aG docker admin1
 ### 5. Clone the Repository
 
 ```bash
-git clone https://github.com/c-stuermer/lf9-rest-api
-cd lf9-rest-api
+git clone https://github.com/c-stuermer/lf9-todo-app
+cd lf9-todo-app
 ```
 
 ### 6. nginx
