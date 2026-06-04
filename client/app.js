@@ -187,10 +187,9 @@ async function createEntry() {
 
 async function deleteList(id) {
     // Confirm dialogue before deletion
-    if (confirm("Liste löschen?")) {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        fetchLists();
-    }
+    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    fetchLists();
+
 }
 
 async function deleteEntry(id) {

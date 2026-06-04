@@ -1,10 +1,12 @@
-import uuid 
+import uuid
 from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
+from prometheus_flask_exporter import PrometheusMetrics
 
 # initialize Flask server
 app = Flask(__name__)
 CORS(app)
+metrics = PrometheusMetrics(app)
 
 # create unique id for lists, entries
 todo_list_1_id = '1318d3d1-d979-47e1-a225-dab1751dbe75'
