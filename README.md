@@ -1,4 +1,4 @@
-# Todo Client & Server (v0.3.0)
+# Todo Client & Server (v0.4.0)
 
 A full-stack Todo list application consisting of a Vanilla JavaScript frontend and a Python/Flask REST API backend, deployed as Docker containers on a Linux server.
 
@@ -8,22 +8,25 @@ The project covers the complete stack: REST API design and implementation, a sta
 
 ```
 /
-├── client/                  # Frontend (HTML, CSS, Vanilla JS)
+├── client/                       # Frontend (HTML, CSS, Vanilla JS)
 │   ├── index.html
 │   ├── styles.css
 │   ├── app.js
 │   ├── config.js
 │   └── Dockerfile
-├── server/                  # REST API (Python, Flask)
+├── server/                       # REST API (Python, Flask)
 │   ├── server.py
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   └── openapi.yaml
 ├── nginx/
-│   └── nginx.conf           # Reverse proxy configuration
+│   ├── nginx.conf                # Main server block (loads includes)
+│   └── includes/
+│       ├── app.conf              # Routes: / and /todo-list
+│       └── monitoring.conf      # Routes: /grafana
 ├── prometheus/
-│   └── prometheus.yml       # Metrics scrape configuration
-└── docker-compose.yml
+│   └── prometheus.yml            # Metrics scrape configuration
+└── docker-compose.yml            # All services (profiles: nginx, monitoring)
 ```
 
 ---
@@ -57,12 +60,11 @@ sudo systemctl restart ssh
 
 ### 3. Firewall (UFW)
 
-Only SSH, HTTP and Grafana are allowed. All other ports remain closed.
+Only SSH and HTTP are allowed. All other ports remain closed.
 
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
-sudo ufw allow 3000/tcp
 sudo ufw enable
 ```
 
@@ -89,55 +91,51 @@ git clone https://github.com/c-stuermer/lf9-todo-app
 cd lf9-todo-app
 ```
 
-### 6. nginx
+### 6. Reverse Proxy
 
-nginx runs on the host and acts as reverse proxy — routing incoming HTTP requests to the respective containers.
+A reverse proxy is required to route incoming HTTP requests to the containers. The following routes must be configured:
+
+| File               | Routes                |
+|--------------------|-----------------------|
+| `app.conf`         | `/` and `/todo-list`  |
+| `monitoring.conf`  | `/grafana`            |
+
+The repository includes a ready-to-use nginx container (`nginx` profile) with the configuration split into include files under `nginx/includes/`. **If you already have a proxy running**, use these files as a reference and configure your proxy with the routes above.
+
+### 7. Monitoring (optional)
+
+Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible through the reverse proxy at `/grafana`.
+
+Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
+
+### 8. Deploy
+
+All services are defined in a single `docker-compose.yml` using profiles. Services without a profile always start; `nginx` and `monitoring` are optional.
 
 ```bash
-sudo apt install -y nginx
-```
-
-Copy the nginx configuration from the repository and enable it:
-
-```bash
-sudo cp nginx/nginx.conf /etc/nginx/sites-available/todo
-sudo ln -s /etc/nginx/sites-available/todo /etc/nginx/sites-enabled/todo
-sudo rm /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-### 7. Deploy the Application
-
-```bash
+# App only
 docker compose up -d
+
+# App + reverse proxy
+docker compose --profile nginx up -d
+
+# App + reverse proxy + monitoring
+docker compose --profile nginx --profile monitoring up -d
 ```
 
-This starts four containers:
+| Service      | Profile      | Description          | Accessible at                   |
+|--------------|--------------|----------------------|---------------------------------|
+| `client`     | —            | Static frontend      | internal only                   |
+| `server`     | —            | Flask REST API       | internal only                   |
+| `nginx`      | `nginx`      | Reverse proxy        | `http://<server-ip>`            |
+| `prometheus` | `monitoring` | Metrics collection   | internal only                   |
+| `grafana`    | `monitoring` | Monitoring dashboard | `http://<server-ip>/grafana`    |
 
-| Container    | Description                   | Accessible at              |
-|--------------|-------------------------------|----------------------------|
-| `client`     | Static frontend (nginx)       | via nginx (port 80)        |
-| `server`     | Flask REST API                | via nginx (port 80)        |
-| `prometheus` | Metrics collection            | internal only              |
-| `grafana`    | Monitoring dashboard          | `http://<server-ip>:3000`  |
-
-The application is available at `http://<server-ip>`.
-
-> `client` and `server` only bind to `127.0.0.1` — they are not directly reachable from outside. All traffic goes through nginx.
-
-To stop all containers:
+To stop all running services:
 
 ```bash
-docker compose down
+docker compose --profile nginx --profile monitoring down
 ```
-
-### 8. Grafana
-
-Open Grafana at `http://<server-ip>:3000`. Default login: `admin` / `admin`.
-
-Add Prometheus as a data source:
-- **URL:** `http://prometheus:9090`
 
 ---
 
