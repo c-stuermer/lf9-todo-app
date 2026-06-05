@@ -60,12 +60,11 @@ sudo systemctl restart ssh
 
 ### 3. Firewall (UFW)
 
-Only SSH, HTTP and Grafana are allowed. All other ports remain closed.
+Only SSH and HTTP are allowed. All other ports remain closed.
 
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
-sudo ufw allow 3000/tcp     # For Grafana monitoring (optional)
 sudo ufw enable
 ```
 
@@ -100,7 +99,7 @@ The repository includes a ready-to-use nginx container (`nginx` profile), config
 
 ### 7. Monitoring (optional)
 
-Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible at `http://<server-ip>:3000` (requires UFW rule for port 3000).
+Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible through the reverse proxy at `http://<server-ip>/grafana/`.
 
 Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
 
@@ -129,7 +128,6 @@ infra-network:
 Then start only the app:
 
 ```bash
-docker network create infra-network  # skip if using your own network
 docker compose up -d
 ```
 
@@ -139,7 +137,7 @@ docker compose up -d
 | `server`     | —            | Flask REST API       | internal only (`server:5000`)            |
 | `nginx`      | `nginx`      | Reverse proxy        | `http://<server-ip>`                     |
 | `prometheus` | `monitoring` | Metrics collection   | internal only                            |
-| `grafana`    | `monitoring` | Monitoring dashboard | `http://<server-ip>:3000`                |
+| `grafana`    | `monitoring` | Monitoring dashboard | `http://<server-ip>/grafana/`            |
 
 To stop all running services:
 
