@@ -91,15 +91,13 @@ git clone https://github.com/c-stuermer/lf9-todo-app
 cd lf9-todo-app
 ```
 
-### 6. Reverse Proxy
+### 6. Deploy
 
-A reverse proxy is required to route incoming HTTP requests to the containers. The following routes must be configured:
+#### Option A: Quick Start (Full Stack)
 
-The repository includes a ready-to-use nginx container (`nginx` profile), configured in `nginx/includes/app.conf`. **If you already have a proxy running**, use this file as a reference — it routes `/` to the client container and `/todo-list` to the server container.
+Use this option to deploy the application including the pre-configured nginx reverse proxy and the Grafana/Prometheus monitoring stack on a fresh server.
 
-### 7. Monitoring (optional)
-
-Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible through the reverse proxy at `http://<server-ip>/grafana/`.
+**Configure Monitoring**
 
 Before starting, set your domain or IP in `docker-compose.yml`:
 
@@ -108,43 +106,45 @@ Before starting, set your domain or IP in `docker-compose.yml`:
 - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
 ```
 
-Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
-
-### 8. Deploy
-
-The app uses two Docker networks:
-
-- `todo-internal` — internal communication between `client` and `server`
-- `infra-network` — shared with the reverse proxy and monitoring stack, so they can reach `client:80` and `server:5000` by service name
-
-**If you are using the included nginx and monitoring containers**, create the shared network first:
+**Start all Services**
 
 ```bash
 docker network create infra-network
 docker compose --profile nginx --profile monitoring up -d
 ```
 
-**If you already have a proxy or monitoring stack running**, change the network name in `docker-compose.yml` to your existing network:
+| | |
+|---|---|
+| App | `http://<server-ip>` |
+| Grafana | `http://<server-ip>/grafana/` |
+
+Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
+
+---
+
+#### Option B: Advanced Deployment (App Only)
+
+Use this option if you already have a reverse proxy or monitoring stack running on your server.
+
+Change the `infra-network` name in `docker-compose.yml` to your existing network:
 
 ```yaml
-infra-network:
-  name: your-existing-network-name  # <- change this
-  external: true
+networks:
+  infra-network:
+    name: your-existing-network-name  # <- change this
+    external: true
 ```
 
-Then start only the app:
+Then start only the core application containers:
 
 ```bash
+docker network create infra-network  # skip if using your own network
 docker compose up -d
 ```
 
-| Service      | Profile      | Description          | Accessible at                            |
-|--------------|--------------|----------------------|------------------------------------------|
-| `client`     | —            | Static frontend      | internal only (`client:80`)              |
-| `server`     | —            | Flask REST API       | internal only (`server:5000`)            |
-| `nginx`      | `nginx`      | Reverse proxy        | `http://<server-ip>`                     |
-| `prometheus` | `monitoring` | Metrics collection   | internal only                            |
-| `grafana`    | `monitoring` | Monitoring dashboard | `http://<server-ip>/grafana/`            |
+`client` will be reachable at `client:80` and `server` at `server:5000` from within `infra-network`. The nginx configuration in `nginx/includes/` can be used as a reference for your own proxy setup.
+
+---
 
 To stop all running services:
 
