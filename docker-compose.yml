@@ -58,8 +58,8 @@ services:
     profiles: [monitoring]
     image: grafana/grafana
     environment:
-      - GF_SERVER_DOMAIN=localhost
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
+      - GF_SERVER_DOMAIN=your-domain-or-ip
+      - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
       - prometheus

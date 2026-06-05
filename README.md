@@ -101,6 +101,13 @@ The repository includes a ready-to-use nginx container (`nginx` profile), config
 
 Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible through the reverse proxy at `http://<server-ip>/grafana/`.
 
+Before starting, set your domain or IP in `docker-compose.yml`:
+
+```yaml
+- GF_SERVER_DOMAIN=your-domain-or-ip
+- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
+```
+
 Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
 
 ### 8. Deploy
