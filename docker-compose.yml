@@ -3,11 +3,12 @@ networks:
   todo-internal:
     name: todo-internal
 
-  # External infrastructure network — shared with the reverse proxy and monitoring stack.
-  # If you already have a proxy or monitoring setup, change the name below to your existing network.
+  # Infrastructure network — shared with the reverse proxy and monitoring stack.
+  # Advanced: If you already have a proxy or monitoring stack running on this host,
+  # set "external: true" and change the name to your existing network. Then remove
+  # the nginx/prometheus/grafana services below (or comment them out).
   infra-network:
     name: infra-network
-    external: true
 
 services:
 
@@ -31,7 +32,6 @@ services:
     restart: always
 
   nginx:
-    profiles: [nginx]
     image: nginx:alpine
     ports:
       - "80:80"
@@ -46,7 +46,6 @@ services:
     restart: always
 
   prometheus:
-    profiles: [monitoring]
     image: prom/prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -55,7 +54,6 @@ services:
     restart: always
 
   grafana:
-    profiles: [monitoring]
     image: grafana/grafana
     environment:
       - GF_SERVER_DOMAIN=your-domain-or-ip

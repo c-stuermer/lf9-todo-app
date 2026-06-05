@@ -1,6 +1,28 @@
 // Build the full API URL dynamically from the configuration file
 const API_URL = `${CONFIG.API_BASE_URL}/todo-list`;
 
+// --- API WRAPPER ---
+
+// Centralized fetch function to handle HTTP errors and JSON parsing uniformly
+async function apiFetch(endpoint, options = {}) {
+    // Automatically set JSON headers if a body is provided
+    if (options.body && !options.headers) {
+        options.headers = { 'Content-Type': 'application/json' };
+    }
+    const response = await fetch(endpoint, options);
+    // Fetch does not reject on HTTP errors (like 404 or 500), so we must check manually
+    if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+    }
+    // Return null if the server sends a "204 No Content" (e.g., after a DELETE request)
+    // Attempting to parse empty content with .json() would crash the app
+    if (response.status === 204) {
+        return null;
+    }
+    // Automatically parse and return the JSON payload
+    return await response.json();
+}
+
 // Global variables
 let currentListId = null;
 let isEditingActive = false; 
@@ -42,10 +64,9 @@ function showList(id, name) {
 async function fetchLists() {
     try {
         //unlock UI when loading lists
-        setInterfaceLocked(false); 
-        
-        const res = await fetch(API_URL);
-        const lists = await res.json();
+        setInterfaceLocked(false);
+
+        const lists = await apiFetch(API_URL);
         const container = document.getElementById('listsContainer');
         container.innerHTML = '';
 
@@ -69,8 +90,7 @@ async function fetchEntries(listId) {
         // Unlock UI when loading entries (e.g. after cancel or save)
         setInterfaceLocked(false);
         
-        const res = await fetch(`${API_URL}/${listId}`);
-        const entries = await res.json();
+        const entries = await apiFetch(`${API_URL}/${listId}`);
         const container = document.getElementById('entriesContainer');
         container.innerHTML = '';
 
@@ -148,13 +168,12 @@ async function saveInlineEntry(id, newName, newDesc) {
     if (!newName.trim()) { alert("Name darf nicht leer sein!"); return; }
 
     try {
-        const res = await fetch(`${API_URL}/entry/${id}`, {
+        await apiFetch(`${API_URL}/entry/${id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName.trim(), description: newDesc.trim() })
         });
         // Fetch entries automatically unlocks the UI upon reloading
-        if (res.ok) fetchEntries(currentListId);
+        fetchEntries(currentListId);
     } catch (err) { console.error(err); }
 }
 
@@ -163,38 +182,42 @@ async function saveInlineEntry(id, newName, newDesc) {
 async function createList() {
     const input = document.getElementById('newListName');
     if (!input.value.trim()) return;
-    await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: input.value.trim() })
-    });
-    input.value = '';
-    fetchLists();
+    try {
+        await apiFetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ name: input.value.trim() })
+        });
+        input.value = '';
+        fetchLists();
+    } catch (err) { console.error(err); }
 }
 
 async function createEntry() {
     const nInput = document.getElementById('newEntryName');
     const dInput = document.getElementById('newEntryDesc');
     if (!nInput.value.trim()) return;
-    await fetch(`${API_URL}/${currentListId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nInput.value.trim(), description: dInput.value.trim() })
-    });
-    nInput.value = ''; dInput.value = '';
-    fetchEntries(currentListId);
+    try {
+        await apiFetch(`${API_URL}/${currentListId}`, {
+            method: 'POST',
+            body: JSON.stringify({ name: nInput.value.trim(), description: dInput.value.trim() })
+        });
+        nInput.value = ''; dInput.value = '';
+        fetchEntries(currentListId);
+    } catch (err) { console.error(err); }
 }
 
 async function deleteList(id) {
-    // Confirm dialogue before deletion
-    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-    fetchLists();
-
+    try {
+        await apiFetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        fetchLists();
+    } catch (err) { console.error(err); }
 }
 
 async function deleteEntry(id) {
-    await fetch(`${API_URL}/entry/${id}`, { method: 'DELETE' });
-    fetchEntries(currentListId);
+    try {
+        await apiFetch(`${API_URL}/entry/${id}`, { method: 'DELETE' });
+        fetchEntries(currentListId);
+    } catch (err) { console.error(err); }
 }
 
 // Initialize application on load

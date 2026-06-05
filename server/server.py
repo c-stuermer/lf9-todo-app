@@ -173,5 +173,10 @@ def handle_entry(entry_id):
         entries.remove(entry_item)
         return '', 204
 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    return jsonify({"error": "Bad Gateway", "message": "An invalid endpoint was called"}), 502
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

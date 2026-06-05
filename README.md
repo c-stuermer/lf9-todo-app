@@ -91,29 +91,33 @@ sudo usermod -aG docker admin1
 ### Clone the Repository
 
 ```bash
+sudo apt install -y git
 git clone https://github.com/c-stuermer/lf9-todo-app
 cd lf9-todo-app
 ```
 
 ### Option A: Quick Start (Full Stack)
 
-Use this option to deploy the application including the pre-configured nginx reverse proxy and the Grafana/Prometheus monitoring stack on a fresh server.
+Use this option to deploy the complete stack on a fresh server with minimal configuration.
 
-**Configure Monitoring**
+**Optional:** For Grafana to generate correct redirect URLs, set your domain or IP in `docker-compose.yml`:
 
-Before starting, set your domain or IP in `docker-compose.yml`:
+```bash
+nano docker-compose.yml
+```
 
 ```yaml
 - GF_SERVER_DOMAIN=your-domain-or-ip
 - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
 ```
 
-**Start all Services**
+**Start all services:**
 
 ```bash
-docker network create infra-network
-docker compose --profile nginx --profile monitoring up -d
+docker compose up -d
 ```
+
+All containers are configured with `restart: always` and will start automatically after a reboot.
 
 | Service | URL |
 |---------|-----|
@@ -135,16 +139,16 @@ Add Prometheus as a data source:
 
 ---
 
-### Option B: Advanced Deployment (App Only)
+### Option B: Advanced Deployment (Existing Proxy / Monitoring)
 
 Use this option if you already have a reverse proxy or monitoring stack running on your server.
 
-Change the `infra-network` name in `docker-compose.yml` to your existing network:
+In `docker-compose.yml`, comment out or remove the `nginx`, `prometheus`, and `grafana` service blocks. Then update the `infra-network` definition to point to your existing Docker network:
 
 ```yaml
 networks:
   infra-network:
-    name: your-existing-network-name  # <- change this
+    name: your-existing-network-name
     external: true
 ```
 
@@ -154,14 +158,14 @@ Then start only the core application containers:
 docker compose up -d
 ```
 
-`client` will be reachable at `client:80` and `server` at `server:5000` from within `infra-network`. The nginx configuration in `nginx/includes/` can be used as a reference for your own proxy setup.
+`client` will be reachable at `client:80` and `server` at `server:5000` from within your network. The configuration in `nginx/includes/` can be used as a reference for your own proxy setup.
 
 ---
 
 To stop all running services:
 
 ```bash
-docker compose --profile nginx --profile monitoring down
+docker compose down
 ```
 
 ---
