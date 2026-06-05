@@ -23,7 +23,7 @@ The project covers the complete stack: REST API design and implementation, a sta
 │   ├── nginx.conf                # Main server block (loads includes)
 │   └── includes/
 │       ├── app.conf              # Routes: / and /todo-list
-│       └── monitoring.conf      # Routes: /grafana
+│       └── monitoring.conf      # Optional routes (inactive by default)
 ├── prometheus/
 │   └── prometheus.yml            # Metrics scrape configuration
 └── docker-compose.yml            # All services (profiles: nginx, monitoring)
@@ -65,7 +65,7 @@ Only SSH, HTTP and Grafana are allowed. All other ports remain closed.
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
-sudo ufw allow 3000/tcp
+sudo ufw allow 3000/tcp     # For Grafana monitoring (optional)
 sudo ufw enable
 ```
 
@@ -96,41 +96,50 @@ cd lf9-todo-app
 
 A reverse proxy is required to route incoming HTTP requests to the containers. The following routes must be configured:
 
-| File               | Routes                |
-|--------------------|-----------------------|
-| `app.conf`         | `/` and `/todo-list`  |
-| `monitoring.conf`  | `/grafana`            |
-
-The repository includes a ready-to-use nginx container (`nginx` profile) with the configuration split into include files under `nginx/includes/`. **If you already have a proxy running**, use these files as a reference and configure your proxy with the routes above.
+The repository includes a ready-to-use nginx container (`nginx` profile), configured in `nginx/includes/app.conf`. **If you already have a proxy running**, use this file as a reference — it routes `/` to the client container and `/todo-list` to the server container.
 
 ### 7. Monitoring (optional)
 
-Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible directly at `http://<server-ip>:3000`.
+Prometheus and Grafana are available via the `monitoring` profile. Grafana is accessible at `http://<server-ip>:3000` (requires UFW rule for port 3000).
 
 Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
 
 ### 8. Deploy
 
-All services are defined in a single `docker-compose.yml` using profiles. Services without a profile always start; `nginx` and `monitoring` are optional.
+The app uses two Docker networks:
+
+- `todo-internal` — internal communication between `client` and `server`
+- `infra-network` — shared with the reverse proxy and monitoring stack, so they can reach `client:80` and `server:5000` by service name
+
+**If you are using the included nginx and monitoring containers**, create the shared network first:
 
 ```bash
-# App only
-docker compose up -d
-
-# App + reverse proxy
-docker compose --profile nginx up -d
-
-# App + reverse proxy + monitoring
+docker network create infra-network
 docker compose --profile nginx --profile monitoring up -d
 ```
 
-| Service      | Profile      | Description          | Accessible at                   |
-|--------------|--------------|----------------------|---------------------------------|
-| `client`     | —            | Static frontend      | internal only                   |
-| `server`     | —            | Flask REST API       | internal only                   |
-| `nginx`      | `nginx`      | Reverse proxy        | `http://<server-ip>`            |
-| `prometheus` | `monitoring` | Metrics collection   | internal only                   |
-| `grafana`    | `monitoring` | Monitoring dashboard | `http://<server-ip>:3000`       |
+**If you already have a proxy or monitoring stack running**, change the network name in `docker-compose.yml` to your existing network:
+
+```yaml
+infra-network:
+  name: your-existing-network-name  # <- change this
+  external: true
+```
+
+Then start only the app:
+
+```bash
+docker network create infra-network  # skip if using your own network
+docker compose up -d
+```
+
+| Service      | Profile      | Description          | Accessible at                            |
+|--------------|--------------|----------------------|------------------------------------------|
+| `client`     | —            | Static frontend      | internal only (`client:80`)              |
+| `server`     | —            | Flask REST API       | internal only (`server:5000`)            |
+| `nginx`      | `nginx`      | Reverse proxy        | `http://<server-ip>`                     |
+| `prometheus` | `monitoring` | Metrics collection   | internal only                            |
+| `grafana`    | `monitoring` | Monitoring dashboard | `http://<server-ip>:3000`                |
 
 To stop all running services:
 

@@ -1,6 +1,13 @@
 networks:
-  todo-network:
-    name: todo-network
+  # Internal network — only for communication between client and server
+  todo-internal:
+    name: todo-internal
+
+  # External infrastructure network — shared with the reverse proxy and monitoring stack.
+  # If you already have a proxy or monitoring setup, change the name below to your existing network.
+  infra-network:
+    name: infra-network
+    external: true
 
 services:
 
@@ -9,7 +16,8 @@ services:
       context: ./client
       dockerfile: Dockerfile
     networks:
-      - todo-network
+      - todo-internal
+      - infra-network
     restart: always
 
   server:
@@ -18,7 +26,8 @@ services:
       dockerfile: Dockerfile
     container_name: todo-server
     networks:
-      - todo-network
+      - todo-internal
+      - infra-network
     restart: always
 
   nginx:
@@ -33,7 +42,7 @@ services:
       - client
       - server
     networks:
-      - todo-network
+      - infra-network
     restart: always
 
   prometheus:
@@ -42,7 +51,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
-      - todo-network
+      - infra-network
     restart: always
 
   grafana:
@@ -53,5 +62,5 @@ services:
     depends_on:
       - prometheus
     networks:
-      - todo-network
+      - infra-network
     restart: always
