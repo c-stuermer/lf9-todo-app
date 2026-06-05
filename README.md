@@ -31,7 +31,7 @@ The project covers the complete stack: REST API design and implementation, a sta
 
 ---
 
-## Server Setup & Deployment
+## Server Setup
 
 > Tested on **Ubuntu 26.04 LTS** (64-bit).
 
@@ -84,16 +84,18 @@ sudo usermod -aG docker admin1
 # Log out and back in for the group change to take effect
 ```
 
-### 5. Clone the Repository
+---
+
+## Deployment
+
+### Clone the Repository
 
 ```bash
 git clone https://github.com/c-stuermer/lf9-todo-app
 cd lf9-todo-app
 ```
 
-### 6. Deploy
-
-#### Option A: Quick Start (Full Stack)
+### Option A: Quick Start (Full Stack)
 
 Use this option to deploy the application including the pre-configured nginx reverse proxy and the Grafana/Prometheus monitoring stack on a fresh server.
 
@@ -113,16 +115,27 @@ docker network create infra-network
 docker compose --profile nginx --profile monitoring up -d
 ```
 
-| | |
-|---|---|
+| Service | URL |
+|---------|-----|
 | App | `http://<server-ip>` |
 | Grafana | `http://<server-ip>/grafana/` |
 
-Grafana default login: `admin` / `admin`. Add Prometheus as a data source with URL `http://prometheus:9090`.
+**Grafana Configuration**
+
+Open Grafana at `http://<server-ip>/grafana/` and log in with the default credentials:
+
+- **Username:** `admin`
+- **Password:** `admin`
+
+Add Prometheus as a data source:
+1. Go to **Connections → Data Sources → Add new data source**
+2. Select **Prometheus**
+3. Set the URL to `http://prometheus:9090` — this is the internal Docker address Grafana uses to query Prometheus directly within the container network
+4. Click **Save & Test**
 
 ---
 
-#### Option B: Advanced Deployment (App Only)
+### Option B: Advanced Deployment (App Only)
 
 Use this option if you already have a reverse proxy or monitoring stack running on your server.
 
@@ -138,7 +151,6 @@ networks:
 Then start only the core application containers:
 
 ```bash
-docker network create infra-network  # skip if using your own network
 docker compose up -d
 ```
 
