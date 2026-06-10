@@ -33,7 +33,7 @@ entries = [
 # --- HELPER FUNCTIONS ---
 
 def get_item_or_404(collection, item_id):
-    #Helper to find an item by ID or abort with 404.
+    """Helper to find an item by ID or abort with 404."""
     for item in collection:
         if item['id'] == item_id:
             return item
@@ -87,10 +87,6 @@ def handle_too_many_requests(error):
 @app.errorhandler(500)
 def handle_internal_server_error(error):
     return jsonify({"error": "Internal Server Error", "message": "An internal server error occurred"}), 500
-
-@app.errorhandler(502)
-def handle_bad_gateway(error):
-    return jsonify({"error": "Bad Gateway", "message": "An invalid endpoint was called"}), 502
 
 # --- ROUTES ---
 

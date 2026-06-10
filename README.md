@@ -23,10 +23,10 @@ The project covers the complete stack: REST API design and implementation, a sta
 │   ├── nginx.conf                # Main server block (loads includes)
 │   └── includes/
 │       ├── app.conf              # Routes: / and /todo-list
-│       └── monitoring.conf      # Optional routes (inactive by default)
+│       └── monitoring.conf       # Routes: monitoring
 ├── prometheus/
 │   └── prometheus.yml            # Metrics scrape configuration
-└── docker-compose.yml            # All services (profiles: nginx, monitoring)
+└── docker-compose.yml
 ```
 
 ---
@@ -36,6 +36,8 @@ The project covers the complete stack: REST API design and implementation, a sta
 > Tested on **Ubuntu 26.04 LTS** (64-bit).
 
 ### 1. User Management
+
+Create an unprivileged user and a separate admin user for remote access via SSH:
 
 ```bash
 # Unprivileged user
@@ -48,11 +50,19 @@ sudo usermod -aG sudo admin1
 
 ### 2. SSH Configuration
 
-Restrict SSH access to the `admin1` user only. Add the following line to `/etc/ssh/sshd_config`:
+Restrict SSH access to `admin1` only by editing the SSH config file and restarting the service:
+
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+Add the following line:
 
 ```
 AllowUsers admin1
 ```
+
+Restart ssh service to make the change take effect:
 
 ```bash
 sudo systemctl restart ssh
@@ -60,7 +70,7 @@ sudo systemctl restart ssh
 
 ### 3. Firewall (UFW)
 
-Only SSH and HTTP are allowed. All other ports remain closed.
+Allow only SSH and HTTP traffic — all other ports remain closed.
 
 ```bash
 sudo ufw allow OpenSSH
@@ -69,6 +79,8 @@ sudo ufw enable
 ```
 
 ### 4. Docker
+
+Install Docker and Docker Compose, then enable and start the Docker service so it runs automatically on boot:
 
 ```bash
 sudo apt update
@@ -90,25 +102,30 @@ sudo usermod -aG docker admin1
 
 ### Clone the Repository
 
+Install git and clone the repository to the server:
+
 ```bash
 sudo apt install -y git
 git clone https://github.com/c-stuermer/lf9-todo-app
 cd lf9-todo-app
 ```
 
-### Option A: Quick Start (Full Stack)
+### Option A: Full Stack with Proxy / Monitoring
 
 Use this option to deploy the complete stack on a fresh server with minimal configuration.
 
-**Optional:** For Grafana to generate correct redirect URLs, set your domain or IP in `docker-compose.yml`:
+**Configure Grafana:** 
+
+Replace the placeholders with your server's domain or IP so Grafana generates correct redirect URLs:
 
 ```bash
 nano docker-compose.yml
 ```
+Change the following lines according to your server address or domain:
 
 ```yaml
-- GF_SERVER_DOMAIN=your-domain-or-ip
-- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
+- GF_SERVER_DOMAIN=your-domain-or-ip                    
+- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/  
 ```
 
 **Start all services:**
@@ -139,7 +156,7 @@ Add Prometheus as a data source:
 
 ---
 
-### Option B: Advanced Deployment (Existing Proxy / Monitoring)
+### Option B: Advanced Deployment with Existing Proxy / Monitoring
 
 Use this option if you already have a reverse proxy or monitoring stack running on your server.
 
@@ -148,8 +165,8 @@ In `docker-compose.yml`, comment out or remove the `nginx`, `prometheus`, and `g
 ```yaml
 networks:
   infra-network:
-    name: your-existing-network-name
-    external: true
+    name: your-existing-network-name    # ← replace this
+    external: true                      # ← add this
 ```
 
 Then start only the core application containers:

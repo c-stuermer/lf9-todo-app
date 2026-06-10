@@ -165,7 +165,7 @@ async function fetchEntries(listId) {
 }
 
 async function saveInlineEntry(id, newName, newDesc) {
-    if (!newName.trim()) { alert("Name darf nicht leer sein!"); return; }
+    if (!newName.trim()) { alert("Name cannot be empty!"); return; }
 
     try {
         await apiFetch(`${API_URL}/entry/${id}`, {
