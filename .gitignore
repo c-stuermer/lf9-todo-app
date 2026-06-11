@@ -1,3 +1,7 @@
 # Python virtual environment
 .venv/
-docs/
+
+# Draw.io source files (export PNG to docs/ instead)
+*.drawio
+*.dtmp
+*.bkp

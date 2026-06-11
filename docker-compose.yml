@@ -1,14 +1,6 @@
 networks:
-  # Internal network — only for communication between client and server
-  todo-internal:
-    name: todo-internal
-
-  # Infrastructure network — shared with the reverse proxy and monitoring stack.
-  # Advanced: If you already have a proxy or monitoring stack running on this host,
-  # set "external: true" and change the name to your existing network. Then remove
-  # the nginx/prometheus/grafana services below (or comment them out).
-  infra-network:
-    name: infra-network
+  docker-net:
+    name: docker-net
 
 services:
 
@@ -17,8 +9,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
     networks:
-      - todo-internal
-      - infra-network
+      - docker-net
     restart: always
 
   server:
@@ -27,8 +18,7 @@ services:
       dockerfile: Dockerfile
     container_name: todo-server
     networks:
-      - todo-internal
-      - infra-network
+      - docker-net
     restart: always
 
   nginx:
@@ -42,7 +32,7 @@ services:
       - client
       - server
     networks:
-      - infra-network
+      - docker-net
     restart: always
 
   prometheus:
@@ -50,21 +40,35 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
-      - infra-network
+      - docker-net
+    restart: always
+
+  node-exporter:
+    image: prom/node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    networks:
+      - docker-net
     restart: always
 
   grafana:
     image: grafana/grafana
     environment:
-      - GF_SERVER_DOMAIN=your-domain-or-ip
-      - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
+      - GF_SERVER_DOMAIN=your-domain-or-ip                   # ← replace this
+      - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/ # ← replace this
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
     networks:
-      - infra-network
+      - docker-net
     restart: always
 
 volumes:
