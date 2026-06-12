@@ -41,6 +41,12 @@ sudo usermod -aG sudo sysadmin
 
 ### 2. SSH
 
+Install OpenSSH server if not already present (required on local VMs; usually pre-installed on cloud instances):
+
+```bash
+sudo apt install -y openssh-server
+```
+
 Restrict SSH access to `sysadmin` only to reduce the attack surface:
 
 ```bash
@@ -56,7 +62,7 @@ AllowUsers sysadmin
 Restart SSH:
 
 ```bash
-sudo systemctl restart ssh
+sudo systemctl restart sshd
 ```
 
 ### 3. Static IP Address (VirtualBox only)
@@ -66,13 +72,14 @@ sudo systemctl restart ssh
 In VirtualBox, set the network adapter to **Bridged Adapter** so the VM receives an IP in the same subnet as the host. Then configure a static IP inside the VM using `netplan`:
 
 ```bash
+sudo apt install -y netplan.io
 ls /etc/netplan/
 ```
 
-Open the config file shown (e.g. `01-netcfg.yaml`):
+Open the config file shown (e.g. `00-installer-config.yaml`):
 
 ```bash
-sudo nano /etc/netplan/01-netcfg.yaml
+sudo nano /etc/netplan/00-installer-config.yaml
 ```
 
 Replace the contents with:
@@ -101,7 +108,7 @@ sudo netplan apply
 Verify the IP was applied:
 
 ```bash
-ip addr show enp0s3
+ip addr show
 ```
 
 ### 4. Firewall
