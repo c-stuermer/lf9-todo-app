@@ -1,51 +1,149 @@
 {
-  "title": "Todo-App",
-  "uid": "todo-app",
-  "schemaVersion": 36,
-  "version": 1,
-  "refresh": "30s",
-  "time": { "from": "now-1h", "to": "now" },
-  "panels": [
-    {
-      "id": 1,
-      "title": "Requests",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "flask_http_request_total",
-          "legendFormat": "{{method}} {{status}}",
-          "refId": "A"
-        }
-      ]
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "todo-app"
+  },
+  "spec": {
+    "title": "Todo-App",
+    "editable": true,
+    "refresh": "30s",
+    "timeSettings": {
+      "from": "now-1h",
+      "to": "now"
     },
-    {
-      "id": 2,
-      "title": "Status",
-      "type": "timeseries",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "up",
-          "legendFormat": "{{job}}",
-          "refId": "A"
+    "variables": [
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "name": "ds_prometheus",
+          "pluginId": "prometheus",
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "current": { "text": "", "value": "" },
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "label": "Datasource",
+          "hide": "variable"
         }
-      ]
-    }
-  ],
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "type": "datasource",
-      "pluginId": "prometheus"
-    }
-  ],
-  "__requires": [
-    { "type": "datasource", "id": "prometheus", "version": "1.0.0" }
-  ]
+      }
+    ],
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Requests",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": { "name": "${ds_prometheus}" },
+                      "spec": {
+                        "expr": "flask_http_request_total",
+                        "legendFormat": "{{method}} {{status}}",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.2",
+            "spec": {
+              "options": {},
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Status",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": { "name": "${ds_prometheus}" },
+                      "spec": {
+                        "expr": "up",
+                        "legendFormat": "{{job}}",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.2",
+            "spec": {
+              "options": {},
+              "fieldConfig": { "defaults": {}, "overrides": [] }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0, "y": 0, "width": 12, "height": 8,
+              "element": { "kind": "ElementReference", "name": "panel-1" }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12, "y": 0, "width": 12, "height": 8,
+              "element": { "kind": "ElementReference", "name": "panel-2" }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "tags": [],
+    "cursorSync": "Off",
+    "liveNow": false,
+    "preload": false
+  }
 }
