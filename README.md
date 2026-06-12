@@ -1,21 +1,21 @@
-# Todo Client & Server (v0.4.0)
+# Todo List App (v1.0.0)
 
-A full-stack Todo list application consisting of a Vanilla JavaScript frontend and a Python/Flask REST API backend, deployed as Docker containers on a Linux server.
-
-The project covers the complete stack: REST API design and implementation, a static web frontend, containerized deployment with Docker, a reverse proxy via nginx, and monitoring with Prometheus and Grafana.
+A full-stack Todo application with a Vanilla JavaScript frontend and a Python/Flask REST API backend. All services run containerized via Docker Compose and are accessible through an nginx reverse proxy. The stack includes infrastructure monitoring via Prometheus and Grafana.
 
 ## Architecture
 
 ![Server Architecture](docs/server_architecture.drawio.png)
 
+All services share a Docker network (`docker-net`). nginx is the only service exposed to the host on port 80 — all other containers are reachable within the network only.
+
 | Service | Image | Description |
-|---------|-------|-------------|
+|---|---|---|
 | nginx | nginx:alpine | Reverse proxy, routes traffic to client and server |
 | client | nginx:alpine | Serves the static frontend |
 | server | custom | Flask REST API |
-| grafana | grafana/grafana | Metrics visualization dashboard |
 | prometheus | prom/prometheus | Scrapes metrics from Flask and node-exporter |
-| node-exporter | prom/node-exporter | Exposes host system metrics |
+| node-exporter | prom/node-exporter | Exposes host system metrics (CPU, RAM, Disk) |
+| grafana | grafana/grafana | Metrics visualization dashboard |
 
 ---
 
@@ -23,50 +23,90 @@ The project covers the complete stack: REST API design and implementation, a sta
 
 > Tested on **Ubuntu 26.04 LTS** (64-bit).
 
-### 1. User Management
-
-Create an unprivileged user (optional) and a separate admin user for remote access via SSH:
-
-```bash
-# Unprivileged user (optional)
-sudo adduser user1
-
-# User for remote administration — add to sudo group
-sudo adduser admin1
-sudo usermod -aG sudo admin1
-```
-
-### 2. Text Editor
-
-Install a terminal text editor for editing config files:
+All steps are performed on the command line. A terminal text editor is required — install one if not already present:
 
 ```bash
 sudo apt install -y nano
 ```
 
-### 3. SSH Configuration
+### 1. User Management
 
-Restrict SSH access to `admin1` by editing the SSH config file and restarting the service:
+```bash
+sudo adduser appuser
+sudo adduser sysadmin
+sudo usermod -aG sudo sysadmin
+```
+
+`sysadmin` is added to the `sudo` group for administrative tasks. `appuser` remains an unprivileged user.
+
+### 2. SSH
+
+Restrict SSH access to `sysadmin` only to reduce the attack surface:
 
 ```bash
 sudo nano /etc/ssh/sshd_config
 ```
 
-Add the following line:
+Add:
 
 ```
-AllowUsers admin1
+AllowUsers sysadmin
 ```
 
-Restart ssh service to make the change take effect:
+Restart SSH:
 
 ```bash
 sudo systemctl restart ssh
 ```
 
-### 4. Firewall (UFW)
+### 3. Static IP Address (VirtualBox only)
 
-Allow only SSH and HTTP traffic — all other ports remain closed.
+> **This step only applies when running on a VirtualBox VM with a Bridged Adapter.** Skip if deploying on a physical server or cloud instance with a pre-assigned static IP.
+
+In VirtualBox, set the network adapter to **Bridged Adapter** so the VM receives an IP in the same subnet as the host. Then configure a static IP inside the VM using `netplan`:
+
+```bash
+ls /etc/netplan/
+```
+
+Open the config file shown (e.g. `01-netcfg.yaml`):
+
+```bash
+sudo nano /etc/netplan/01-netcfg.yaml
+```
+
+Replace the contents with:
+
+```yaml
+network:
+  version: 2
+  ethernets:
+    enp0s3:                     # ← replace with your interface name (check with: ip link)
+      dhcp4: no
+      addresses:
+        - 192.168.1.100/24      # ← your desired static IP and subnet
+      routes:
+        - to: default
+          via: 192.168.1.1      # ← your gateway (usually the router IP)
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1]
+```
+
+Apply the configuration:
+
+```bash
+sudo netplan apply
+```
+
+Verify the IP was applied:
+
+```bash
+ip addr show enp0s3
+```
+
+### 4. Firewall
+
+Only SSH (22) and HTTP (80) are allowed — all other ports, including Grafana (:3000) and Prometheus (:9090), remain closed and are only accessible through the nginx reverse proxy:
 
 ```bash
 sudo ufw allow OpenSSH
@@ -76,8 +116,6 @@ sudo ufw enable
 
 ### 5. Docker
 
-Install Docker and Docker Compose, then enable and start the Docker service so it runs automatically on boot:
-
 ```bash
 sudo apt update
 sudo apt install -y docker.io docker-compose-v2
@@ -85,21 +123,19 @@ sudo systemctl enable docker
 sudo systemctl start docker
 ```
 
-Add `admin1` to the `docker` group to run Docker without `sudo`:
+Add `sysadmin` to the `docker` group to run Docker without `sudo`:
 
 ```bash
-sudo usermod -aG docker admin1
+sudo usermod -aG docker sysadmin
 ```
 
-Log out and back in for the group change to take effect
+Log out and back in for the group change to take effect.
 
 ---
 
 ## Deployment
 
 ### 1. Clone the Repository
-
-Install git and clone the repository to the server:
 
 ```bash
 sudo apt install -y git
@@ -109,52 +145,42 @@ cd lf9-todo-app
 
 ### 2. Configuration
 
-Replace the placeholders with your server's domain or IP so Grafana generates correct redirect URLs:
+Grafana requires the server's domain or IP to generate correct redirect URLs:
 
 ```bash
 nano docker-compose.yml
 ```
-Change the following lines according to your server address or domain:
 
 ```yaml
-- GF_SERVER_DOMAIN=your-domain-or-ip                    # ← replace this
-- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/  # ← replace this
+- GF_SERVER_DOMAIN=your-domain-or-ip
+- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
 ```
 
-### 3. Start all services:
+### 3. Start Services
 
 ```bash
 docker compose up -d
 ```
 
-All containers are configured with `restart: always` and will start automatically after a reboot.
+All containers start automatically after a reboot (`restart: always`).
 
 | Service | URL |
-|---------|-----|
+|---|---|
 | App | `http://<server-ip>` |
 | Grafana | `http://<server-ip>/grafana/` |
 
-### 4. Grafana Configuration
+### 4. Grafana Initial Login
 
-Open Grafana at `http://<server-ip>/grafana/` and log in with the default credentials:
+Open Grafana and log in with the default credentials:
 
 - **Username:** `admin`
 - **Password:** `admin`
 
-Add Prometheus as a data source:
-1. Go to **Connections → Data Sources → Add new data source**
-2. Select **Prometheus**
-3. Set the URL to `http://prometheus:9090` — this is the internal Docker address Grafana uses to query Prometheus directly within the container network
-4. Click **Save & Test**
-
-Import dashboards for both metric sources:
-1. Go to **Dashboards → New → Import**
-2. Enter dashboard ID `11074` → **Load** — Flask application metrics
-3. Repeat and enter dashboard ID `1860` → **Load** — Host system metrics (CPU, RAM, Disk)
+Prometheus is pre-configured as the default data source. Both dashboards (Flask API metrics and host system metrics) are provisioned automatically on first start.
 
 ---
 
-## To stop all running services:
+## Stop All Services
 
 ```bash
 docker compose down
@@ -172,24 +198,28 @@ The full REST API specification is documented in [`server/openapi.yaml`](server/
 
 ```
 /
-├── client/                       # Frontend (HTML, CSS, Vanilla JS)
+├── client/                         # Frontend (HTML, CSS, Vanilla JS)
 │   ├── index.html
 │   ├── styles.css
 │   ├── app.js
 │   ├── config.js
 │   └── Dockerfile
-├── server/                       # REST API (Python, Flask)
+├── server/                         # REST API (Python, Flask)
 │   ├── server.py
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   └── openapi.yaml
 ├── nginx/
-│   ├── nginx.conf                # Main server block (loads includes)
+│   ├── nginx.conf
 │   └── includes/
-│       ├── app.conf              # Routes: / and /todo-list
-│       └── monitoring.conf       # Routes: monitoring
+│       ├── app.conf                # Routes: / and /todo-list
+│       └── monitoring.conf         # Routes: /grafana
 ├── prometheus/
-│   └── prometheus.yml            # Metrics scrape configuration
+│   └── prometheus.yml
+├── grafana/
+│   └── provisioning/
+│       ├── dashboards/
+│       └── datasources/
 ├── docs/
 │   └── server_architecture.drawio.png
 └── docker-compose.yml
