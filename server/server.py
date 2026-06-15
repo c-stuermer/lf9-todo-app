@@ -40,7 +40,7 @@ def get_item_or_404(collection, item_id):
     abort(404)
 
 def validate_list_data(data):
-    # Validates payload for creating a new list.
+    """Validates payload for creating a new list."""
     if not data or 'name' not in data:
         return jsonify({"error": "Bad Request", "message": "Missing required field: 'name'"}), 400
     if not isinstance(data['name'], str) or not data['name'].strip():
@@ -48,7 +48,7 @@ def validate_list_data(data):
     return None # Validation passed
 
 def validate_entry_data(data, is_patch=False):
-    # Validates payload for entries. Restricts allowed fields.
+    """Validates payload for entries. Restricts allowed fields."""
     if not data:
         return jsonify({"error": "Bad Request", "message": "Empty request body"}), 400
     

@@ -9,7 +9,8 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 0.1.0
 servers:
-  - url: http://127.0.0.1:5000/
+  - url: http://<server-ip>/
+    description: Production server (via nginx reverse proxy)
 tags:
   - name: List Management
     description: Operations for lists and entries

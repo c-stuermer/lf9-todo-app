@@ -1,4 +1,4 @@
-# Todo List App (v1.0.0)
+# Todo List App (v1.0.1)
 
 A full-stack Todo application with a Vanilla JavaScript frontend and a Python/Flask REST API backend. All services run containerized via Docker Compose and are accessible through an nginx reverse proxy. The stack includes infrastructure monitoring via Prometheus and Grafana.
 
@@ -23,11 +23,7 @@ All services share a Docker network (`docker-net`). nginx is the only service ex
 
 > Tested on **Ubuntu 26.04 LTS** (64-bit).
 
-All steps are performed on the command line. A terminal text editor is required — install one if not already present:
-
-```bash
-sudo apt install -y nano
-```
+All steps are performed on the command line.
 
 ### 1. User Management
 
@@ -41,7 +37,7 @@ sudo usermod -aG sudo sysadmin
 
 ### 2. SSH
 
-Install OpenSSH server if not already present (required on local VMs; usually pre-installed on cloud instances):
+Install OpenSSH server if not already present:
 
 ```bash
 sudo apt install -y openssh-server
@@ -65,14 +61,13 @@ Restart SSH:
 sudo systemctl restart sshd
 ```
 
-### 3. Static IP Address (VirtualBox only)
+### 3. Static IP Address (VMs only)
 
-> **This step only applies when running on a VirtualBox VM with a Bridged Adapter.** Skip if deploying on a physical server or cloud instance with a pre-assigned static IP.
+> **This step only applies when running on a virtual machine without a pre-assigned static IP.** Skip if deploying on a physical server or cloud instance with a pre-assigned static IP.
 
-In VirtualBox, set the network adapter to **Bridged Adapter** so the VM receives an IP in the same subnet as the host. Then configure a static IP inside the VM using `netplan`:
+Configure the VM's network adapter to use **Bridged Networking** so it receives an IP in the same subnet as the host. Then configure a static IP inside the VM using `netplan`:
 
 ```bash
-sudo apt install -y netplan.io
 ls /etc/netplan/
 ```
 
@@ -123,6 +118,8 @@ sudo ufw enable
 
 ### 5. Docker
 
+Install and run Docker:
+
 ```bash
 sudo apt update
 sudo apt install -y docker.io docker-compose-v2
@@ -152,15 +149,17 @@ cd lf9-todo-app
 
 ### 2. Configuration
 
-Grafana requires the server's domain or IP to generate correct redirect URLs:
+Grafana requires some configuration to generate correct redirect URLs:
 
 ```bash
 nano docker-compose.yml
 ```
 
+Change the following lines according to your domain or IP:
+
 ```yaml
-- GF_SERVER_DOMAIN=your-domain-or-ip
-- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/
+- GF_SERVER_DOMAIN=your-domain-or-ip                      # ← change this
+- GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/    # ← change this
 ```
 
 ### 3. Start Services
@@ -226,8 +225,14 @@ The full REST API specification is documented in [`server/openapi.yaml`](server/
 ├── grafana/
 │   └── provisioning/
 │       ├── dashboards/
+│       │   ├── dashboards.yml
+│       │   ├── node_exporter.json
+│       │   └── todo_app.json
 │       └── datasources/
+│           └── prometheus.yml
 ├── docs/
 │   └── server_architecture.drawio.png
-└── docker-compose.yml
+├── .gitignore
+├── docker-compose.yml
+└── README.md
 ```

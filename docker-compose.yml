@@ -60,8 +60,8 @@ services:
   grafana:
     image: grafana/grafana
     environment:
-      - GF_SERVER_DOMAIN=your-domain-or-ip                   # ← replace this
-      - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/ # ← replace this
+      - GF_SERVER_DOMAIN=your-domain-or-ip                      # ← change this
+      - GF_SERVER_ROOT_URL=http://your-domain-or-ip/grafana/    # ← change this
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana-data:/var/lib/grafana
